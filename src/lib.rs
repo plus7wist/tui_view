@@ -11,6 +11,9 @@ use itertools::Itertools;
 use tui::{backend::CrosstermBackend, Terminal};
 use view::{run_app, App};
 
+pub use crossterm::event::KeyCode;
+pub use crossterm::event::KeyModifiers;
+
 use std::{io, panic};
 fn cleanup_terminal() {
     let mut stdout = io::stdout();
@@ -35,7 +38,7 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub struct Keybind {
     pub modifier: crossterm::event::KeyModifiers,
-    pub key: Option<crossterm::event::KeyCode>,
+    pub key: Option<KeyCode>,
     pub function: fn() -> Result<()>,
 }
 
