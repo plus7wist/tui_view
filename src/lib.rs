@@ -33,8 +33,14 @@ fn setup_panic_hook() {
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
+pub struct Keybind {
+    pub modifier: crossterm::event::KeyModifiers,
+    pub key: Option<crossterm::event::KeyCode>,
+    pub function: fn() -> Result<()>,
+}
+
 pub trait Opts {
-    fn on_enter(&self, selected_item: &Page) -> Result<()>;
+    fn keybinds(&self, selected_item: &Page) -> Vec<Keybind>;
     fn get_pages(&self) -> Vec<Page>;
     fn get_keywords(&self) -> Option<Vec<&'static str>>;
 }

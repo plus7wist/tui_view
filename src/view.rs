@@ -135,11 +135,19 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                         if let KeyCode::Char(x) = key.code {
                             app.search.push(x);
                         }
+                    }
+                }
 
-                        if key.code == KeyCode::Enter {
-                            let index = app.state.selected().unwrap();
-                            let selected = app.current_pages.get(index).unwrap();
-                            let _ = app.opts.on_enter(selected);
+                let index = app.state.selected().unwrap();
+                let selected = app.current_pages.get(index).unwrap();
+                for keybind in app.opts.keybinds(selected) {
+                    if key.modifiers == keybind.modifier {
+                        if keybind.key.is_some() && key.code == keybind.key.unwrap() {
+                            (keybind.function)();
+                        }
+
+                        if keybind.key.is_none() {
+                            (keybind.function)();
                         }
                     }
                 }
