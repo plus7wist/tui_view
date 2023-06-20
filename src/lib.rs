@@ -72,9 +72,9 @@ pub fn create_view(opts: Box<dyn Opts>) -> Result<()> {
 
 #[derive(Clone)]
 pub struct Page {
-    contents: String,
-    title: String,
-    sort_field: Option<f64>,
+    pub contents: String,
+    pub title: String,
+    pub sort_field: Option<f64>,
     relevancy: u64,
 }
 
@@ -87,6 +87,7 @@ impl Page {
             relevancy: 0,
         }
     }
+
     fn search(&mut self, needle: &str, keywords: Option<Vec<&str>>) {
         let haystack = &self.contents;
         let mut relevancy = 0;
