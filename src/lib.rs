@@ -1,4 +1,3 @@
-mod page;
 mod view;
 use crossterm::{
     cursor,
@@ -75,7 +74,7 @@ pub fn create_view(opts: Box<dyn Opts>) -> Result<()> {
 pub struct Page {
     pub contents: String,
     pub title: String,
-    pub relevancy: u64,
+    relevancy: u64,
     pub sort_field: Option<f64>,
 }
 
