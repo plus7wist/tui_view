@@ -1,4 +1,5 @@
-use std::{io, time::Duration};
+use std::{io, rc::Rc, time::Duration};
+use tui::{layout::Rect, widgets::Clear};
 
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use tui::{
@@ -10,32 +11,38 @@ use tui::{
     Frame, Terminal,
 };
 
+use crate::Opts;
 use crate::Page;
-use crate::{Opts, Result};
 
+#[derive(Clone)]
 pub struct App {
-    state: TableState,
-    pages: Vec<Page>,
-    current_pages: Vec<Page>,
+    pub state: TableState,
+    pub pages: Vec<Page>,
+    pub current_pages: Vec<Page>,
     scroll: u16,
-    search: Vec<char>,
+    pub search: Vec<char>,
     latest_search: Vec<char>,
-    opts: Box<dyn Opts>,
+    show_dock: bool,
+    pub show_popup: bool,
+    pub popup_content: String,
+    opts: Rc<dyn Opts>,
 }
 
 impl App {
-    pub fn new(opts: Box<dyn Opts>) -> Result<Self> {
-        Ok(App {
+    pub fn new(opts: Rc<dyn Opts>) -> Self {
+        App {
             state: TableState::default(),
             current_pages: opts.get_pages(),
             scroll: 0,
             search: Vec::new(),
             pages: opts.get_pages(),
             latest_search: Vec::new(),
+            show_dock: true,
+            show_popup: false,
+            popup_content: String::default(),
             opts,
-        })
+        }
     }
-
     fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
@@ -110,6 +117,14 @@ impl App {
             }
         });
     }
+
+    fn toggle_dock(&mut self) {
+        self.show_dock = !self.show_dock;
+    }
+
+    fn toggle_popup(&mut self) {
+        self.show_popup = !self.show_popup;
+    }
 }
 
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
@@ -125,31 +140,24 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                         KeyCode::Char('u') => app.scroll_up(),
                         KeyCode::Char('j') => app.next(),
                         KeyCode::Char('k') => app.previous(),
+                        KeyCode::Char('b') => app.toggle_dock(),
+                        KeyCode::Char('p') => app.toggle_popup(),
                         _ => {}
                     },
                     _ => {
                         if key.code == KeyCode::Backspace {
                             app.search.pop();
                         }
-
                         if let KeyCode::Char(x) = key.code {
                             app.search.push(x);
                         }
                     }
                 }
 
-                let index = app.state.selected().unwrap();
-                let selected = app.current_pages.get(index).unwrap();
-                for keybind in app.opts.keybinds(selected) {
-                    if key.modifiers == keybind.modifier {
-                        if keybind.key.is_some() && key.code == keybind.key.unwrap() {
-                            (keybind.function)();
-                        }
-
-                        if keybind.key.is_none() {
-                            (keybind.function)();
-                        }
-                    }
+                if key.modifiers == event::KeyModifiers::CONTROL
+                    && key.code == event::KeyCode::Char('s')
+                {
+                    app = app.opts.keybinds(key, app.clone());
                 }
             }
         } else if app.search != app.latest_search {
@@ -160,10 +168,40 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
     }
 }
 
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Percentage((100 - percent_y) / 2),
+                Constraint::Percentage(percent_y),
+                Constraint::Percentage((100 - percent_y) / 2),
+            ]
+            .as_ref(),
+        )
+        .split(r);
+
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(
+            [
+                Constraint::Percentage((100 - percent_x) / 2),
+                Constraint::Percentage(percent_x),
+                Constraint::Percentage((100 - percent_x) / 2),
+            ]
+            .as_ref(),
+        )
+        .split(popup_layout[1])[1]
+}
+
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+    let dock_size = if app.show_dock { 30 } else { 0 };
     let main_layout = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
+        .constraints([
+            Constraint::Percentage(dock_size),
+            Constraint::Percentage(70),
+        ])
         .split(f.size());
 
     let layout = Layout::default()
@@ -194,7 +232,16 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .block(Block::default().title("Search").borders(Borders::ALL))
         .wrap(Wrap { trim: true });
 
-    f.render_widget(search, layout[0]);
     f.render_widget(page, main_layout[1]);
+    f.render_widget(search, layout[0]);
     f.render_stateful_widget(directory_table, layout[1], &mut app.state);
+    if app.show_popup {
+        let size = f.size();
+        let popup = Paragraph::new(app.popup_content.clone())
+            .block(Block::default().title("Popup").borders(Borders::ALL))
+            .wrap(Wrap { trim: false });
+        let area = centered_rect(60, 20, size);
+        f.render_widget(Clear, area);
+        f.render_widget(popup, area);
+    }
 }

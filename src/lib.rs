@@ -9,12 +9,12 @@ use crossterm::{
 };
 use itertools::Itertools;
 use tui::{backend::CrosstermBackend, Terminal};
-use view::{run_app, App};
+use view::run_app;
 
-pub use crossterm::event::KeyCode;
-pub use crossterm::event::KeyModifiers;
+pub use crossterm::event;
+pub use view::App;
 
-use std::{io, panic};
+use std::{fmt::Display, io, panic, rc::Rc};
 fn cleanup_terminal() {
     let mut stdout = io::stdout();
 
@@ -36,19 +36,13 @@ fn setup_panic_hook() {
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-pub struct Keybind {
-    pub modifier: crossterm::event::KeyModifiers,
-    pub key: Option<KeyCode>,
-    pub function: fn() -> Result<()>,
-}
-
 pub trait Opts {
-    fn keybinds(&self, selected_item: &Page) -> Vec<Keybind>;
+    fn keybinds(&self, key: event::KeyEvent, app: App) -> App;
     fn get_pages(&self) -> Vec<Page>;
     fn get_keywords(&self) -> Option<Vec<&'static str>>;
 }
 
-pub fn create_view(opts: Box<dyn Opts>) -> Result<()> {
+pub fn create_view(opts: Rc<dyn Opts>) -> Result<()> {
     better_panic::install();
 
     enable_raw_mode()?;
@@ -61,7 +55,7 @@ pub fn create_view(opts: Box<dyn Opts>) -> Result<()> {
 
     setup_panic_hook();
 
-    let app = App::new(opts)?;
+    let app = App::new(opts);
     let res = run_app(&mut terminal, app);
 
     disable_raw_mode()?;
@@ -79,7 +73,7 @@ pub fn create_view(opts: Box<dyn Opts>) -> Result<()> {
     Ok(())
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Page {
     pub contents: String,
     pub title: String,
