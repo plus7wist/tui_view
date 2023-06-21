@@ -16,10 +16,16 @@ use crate::Page;
 
 #[derive(Clone)]
 pub struct App {
+    /// State ot the table displayed on the dock.
+    /// Can be used to get the selected item.
     pub state: TableState,
     pub pages: Vec<Page>,
+    /// The pages that are displayed at any moment.
+    /// Should be equal to pages at the begining and
+    /// modified by the library whyle filtering pages.
     pub current_pages: Vec<Page>,
     scroll: u16,
+    /// Characters typed in the search bar.
     pub search: Vec<char>,
     latest_search: Vec<char>,
     show_dock: bool,
@@ -142,9 +148,11 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                         KeyCode::Char('k') => app.previous(),
                         KeyCode::Char('b') => app.toggle_dock(),
                         KeyCode::Char('p') => app.toggle_popup(),
-                        _ => {}
+                        _ => {
+                            app = app.opts.keybinds(key, app.clone());
+                        }
                     },
-                    _ => {
+                    KeyModifiers::NONE => {
                         if key.code == KeyCode::Backspace {
                             app.search.pop();
                         }
@@ -152,12 +160,9 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                             app.search.push(x);
                         }
                     }
-                }
-
-                if key.modifiers == event::KeyModifiers::CONTROL
-                    && key.code == event::KeyCode::Char('s')
-                {
-                    app = app.opts.keybinds(key, app.clone());
+                    _ => {
+                        app = app.opts.keybinds(key, app.clone());
+                    }
                 }
             }
         } else if app.search != app.latest_search {

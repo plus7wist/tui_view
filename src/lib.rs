@@ -14,7 +14,7 @@ use view::run_app;
 pub use crossterm::event;
 pub use view::App;
 
-use std::{fmt::Display, io, panic, rc::Rc};
+use std::{io, panic, rc::Rc};
 fn cleanup_terminal() {
     let mut stdout = io::stdout();
 
@@ -36,9 +36,17 @@ fn setup_panic_hook() {
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
+/// create_view function expects a Strecu that implements this trait.
+/// All data and behaviour is transfered into the rontend through this.
 pub trait Opts {
+    /// This is called on (pretty much) every key event and how the
+    /// consumer customizes the apps behaviour. They can match on
+    /// the key event and define behaviours accordindly.
     fn keybinds(&self, key: event::KeyEvent, app: App) -> App;
+    /// This is supposed to return the actual data to be
+    /// loaded into the app as Page structs.
     fn get_pages(&self) -> Vec<Page>;
+    /// You can define words here that will take priority in search.
     fn get_keywords(&self) -> Option<Vec<&'static str>>;
 }
 
@@ -75,8 +83,14 @@ pub fn create_view(opts: Rc<dyn Opts>) -> Result<()> {
 
 #[derive(Debug, Clone)]
 pub struct Page {
+    /// The text displayed in the reader.
     pub contents: String,
+    /// The text displayed in the dock.
     pub title: String,
+    /// A value that will be used to sort filtered
+    /// pages in descending order. If None, search
+    /// will try to calculate the relevancy of pages
+    /// and sort accordingly.
     pub sort_field: Option<f64>,
     relevancy: u64,
 }
