@@ -36,11 +36,11 @@ fn setup_panic_hook() {
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-/// create_view function expects a Strecu that implements this trait.
-/// All data and behaviour is transfered into the rontend through this.
+/// create_view function expects a Struct that implements this trait.
+/// All data and behaviour is transfered into the frontend through this.
 pub trait Opts {
     /// This is called on (pretty much) every key event and how the
-    /// consumer customizes the apps behaviour. They can match on
+    /// consumer customizes the app's behaviour. They can match on
     /// the key event and define behaviours accordindly.
     fn keybinds(&self, key: event::KeyEvent, app: App) -> App;
     /// This is supposed to return the actual data to be

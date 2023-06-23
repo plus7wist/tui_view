@@ -3,9 +3,9 @@
 
 A reusable and mildly configurable TUI frontend library. 
 
-The library is aims to provide a simple way of loading some data into a terminal interface with no frontend programming. It porvides basic actions but it is possible to define custom keybindings too.
+The library aims to provide a simple way of loading some data into a terminal interface with no frontend programming. It provides basic actions but it is possible to define custom keybindings too.
 
-The library exposes several constructs that can be used to customize its behaviour as well as passing in data.
+The library exposes several constructs that can be used to customize its behaviour as well as pass data into it.
 
 [Documentation](https://docs.rs/tui_view/latest/tui_view/)
 

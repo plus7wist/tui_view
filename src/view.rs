@@ -21,8 +21,8 @@ pub struct App {
     pub state: TableState,
     pub pages: Vec<Page>,
     /// The pages that are displayed at any moment.
-    /// Should be equal to pages at the begining and
-    /// modified by the library whyle filtering pages.
+    /// Should be equal to pages at the beginning and
+    /// modified by the library while filtering pages.
     pub current_pages: Vec<Page>,
     scroll: u16,
     /// Characters typed in the search bar.
