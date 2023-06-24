@@ -42,12 +42,16 @@ pub trait Opts {
     /// This is called on (pretty much) every key event and how the
     /// consumer customizes the app's behaviour. They can match on
     /// the key event and define behaviours accordindly.
-    fn keybinds(&self, key: event::KeyEvent, app: App) -> App;
+    fn keybinds(&self, key: event::KeyEvent, app: App) -> App {
+        app
+    }
     /// This is supposed to return the actual data to be
     /// loaded into the app as Page structs.
     fn get_pages(&self) -> Vec<Page>;
     /// You can define words here that will take priority in search.
-    fn get_keywords(&self) -> Option<Vec<&'static str>>;
+    fn get_keywords(&self) -> Vec<&'static str> {
+        vec![]
+    }
 }
 
 pub fn create_view(opts: Rc<dyn Opts>) -> Result<()> {
@@ -105,7 +109,7 @@ impl Page {
         }
     }
 
-    fn search(&mut self, needle: &str, keywords: Option<Vec<&str>>) {
+    fn search(&mut self, needle: &str, keywords: Vec<&str>) {
         let haystack = &self.contents;
         let mut relevancy = 0;
 
@@ -137,12 +141,11 @@ impl Page {
             if haystack.contains(&comb) {
                 let needle_size_multiplier = (comb.split(' ').count() as u64).pow(5);
 
-                let keyword_multiplier =
-                    if keywords.is_some() && keywords.clone().unwrap().contains(&comb.as_str()) {
-                        10
-                    } else {
-                        1
-                    };
+                let keyword_multiplier = if keywords.contains(&comb.as_str()) {
+                    10
+                } else {
+                    1
+                };
 
                 let count_relevancy = haystack.matches(&comb).count() as u64;
 
