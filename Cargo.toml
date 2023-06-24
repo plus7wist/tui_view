@@ -1,6 +1,6 @@
 [package]
 name = "tui_view"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 description = "Reusable and mildly configurable TUI view"
 license = "MIT"
