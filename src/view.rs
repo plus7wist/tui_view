@@ -1,8 +1,8 @@
+use ratatui::{layout::Rect, widgets::Clear};
 use std::{io, rc::Rc, time::Duration};
-use tui::{layout::Rect, widgets::Clear};
 
-use crossterm::event::{self, Event, KeyCode, KeyModifiers};
-use tui::{
+use crossterm::event::{self, Event, KeyCode, KeyModifiers, MouseEvent, MouseEventKind};
+use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
     style::{Modifier, Style},
@@ -138,32 +138,38 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
         terminal.draw(|f| ui(f, &mut app))?;
 
         if event::poll(Duration::from_millis(200))? {
-            if let Event::Key(key) = event::read()? {
-                match key.modifiers {
-                    KeyModifiers::CONTROL => match key.code {
-                        KeyCode::Char('e') => return Ok(()),
-                        KeyCode::Char('d') => app.scroll_down(),
-                        KeyCode::Char('u') => app.scroll_up(),
-                        KeyCode::Char('j') => app.next(),
-                        KeyCode::Char('k') => app.previous(),
-                        KeyCode::Char('b') => app.toggle_dock(),
-                        KeyCode::Char('p') => app.toggle_popup(),
-                        _ => {
-                            app = app.opts.keybinds(key, app.clone());
+            match event::read()? {
+                Event::Key(key) => {
+                    match key.modifiers {
+                        KeyModifiers::CONTROL => match key.code {
+                            KeyCode::Char('e') => return Ok(()),
+                            KeyCode::Char('d') => app.scroll_down(),
+                            KeyCode::Char('u') => app.scroll_up(),
+                            KeyCode::Char('j') => app.next(),
+                            KeyCode::Char('k') => app.previous(),
+                            KeyCode::Char('b') => app.toggle_dock(),
+                            KeyCode::Char('p') => app.toggle_popup(),
+                            _ => {}
+                        },
+                        KeyModifiers::NONE => {
+                            if key.code == KeyCode::Backspace {
+                                app.search.pop();
+                            }
+                            if let KeyCode::Char(x) = key.code {
+                                app.search.push(x);
+                            }
                         }
-                    },
-                    KeyModifiers::NONE => {
-                        if key.code == KeyCode::Backspace {
-                            app.search.pop();
-                        }
-                        if let KeyCode::Char(x) = key.code {
-                            app.search.push(x);
-                        }
+                        _ => {}
                     }
-                    _ => {
-                        app = app.opts.keybinds(key, app.clone());
-                    }
+                    app = app.opts.keybinds(key, app.clone());
                 }
+                Event::Mouse(MouseEvent {
+                    kind: MouseEventKind::Down(event::MouseButton::Left),
+                    column: _,
+                    row: _,
+                    modifiers: _,
+                }) => app.show_popup = false,
+                _ => {}
             }
         } else if app.search != app.latest_search {
             app.latest_search = app.search.clone();

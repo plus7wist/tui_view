@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/nonzac/tui_view"
 
 [dependencies]
-tui = "0.19"
+ratatui = "0.20"
 crossterm = "0.25"
 itertools = "0.10.5"
 better-panic = "0.3.0"
