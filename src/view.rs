@@ -52,7 +52,7 @@ impl App {
     fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i < self.current_pages.len() - 1 {
+                if i + 1 < self.current_pages.len() {
                     i + 1
                 } else {
                     i
